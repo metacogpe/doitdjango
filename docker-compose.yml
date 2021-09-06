@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  nginx:
+    build: ./nginx   # ./nginx 디렉토리의 Dockerfile을 사용한다는 의미
+    volumes:
+      - static_volume:/usr/src/app/_static
+      - media_volume:/usr/src/app/_media
+    ports:
+      - 80:80
+    depends_on:
+      - web
+  web:        # web 이라고 명명된 container
+    build: .  # 현재 디렉토리의 Dockerfile 을 사용한다는 의미
+
+    # Gunicorn 사용 전
+    # command: python manage.py runserver 0.0.0.0:8000  # 가상 환경 내에서 명령 수행
+    # Gunicorn 사용
+    command: gunicorn do_it_django_prj.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/usr/src/app/_static  # nginx 추가에 따른 추가
+      - media_volume:/usr/src/app/_media    # nginx 추가에 따른 추가
+      - ./:/usr/src/app/  # 현재 폴더를 /usr/src/app/ 가상 폴더와 연결
+# nginx 사용에 따라 8000으로 오면 80으로 내보내기
+    expose:
+      - 8000
+# nginx 사용에 따라 comment 처리
+#    ports:
+#      - 8000:8000  # 로컬 8000과 가상 환경의 8000이 함께 open 되도록 설정
+    env_file:
+      - ./.env.prod # 웹 사이트의 에러 메시지 표시 dev(개발) 모드
+    depends_on:
+      - db
+  db:
+    image: postgres:12.0-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env.prod.db
+
+volumes:
+  postgres_data:
+  # nginx 추가에 따라 static_volume 과 media_volume 을 추가
+  static_volume:
+  media_volume:
+
+
+
+
+
+
+
